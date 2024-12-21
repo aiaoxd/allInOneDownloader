@@ -1,6 +1,6 @@
 # allInOneDownloader
 
-下载 zip 解压 运行即可
+下载 alo2gforwindows.zip 解压 运行即可
 
 图形界面
 
