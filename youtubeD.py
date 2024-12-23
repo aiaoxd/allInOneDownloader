@@ -95,9 +95,14 @@ class YouTubeDownloader:
 
         # 使用 youtube-dl 进行下载操作，确保选中合适的格式。
         ydl_opts = {
-            'format': selected_format['format_id'],
-            'outtmpl': os.path.join(self.download_path, f"{title}.%(ext)s"),
-            'progress_hooks': [self.show_progress]
+            'format': 'bestvideo+bestaudio/best',  # 下载最佳视频和音频并合并
+            'outtmpl': os.path.join(self.download_path, f"{title}.%(ext)s"),  # 输出文件名模板
+            'postprocessors': [{  # 使用后处理器将音频和视频合并成 MP4 格式
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': 'mp4',  # 强制转换为 mp4 格式
+            }],
+            'progress_hooks': [self.show_progress],  # 显示进度
+            'quiet': False,  # 显示更多信息
         }
 
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
