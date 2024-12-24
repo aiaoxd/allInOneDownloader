@@ -3,3 +3,4 @@ tqdm
 yt_dlp
 ffmpeg-python
 ffmpeg
+bs4
