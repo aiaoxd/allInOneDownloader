@@ -13,8 +13,10 @@ class YouTubeDownloader:
         :param download_path: 可选，指定下载路径，默认为桌面
         """
         self.url = url
-        self.download_path = download_path or os.path.join(os.path.expanduser('~'), 'Desktop')
-
+        # self.download_path = download_path or os.path.join(os.path.expanduser('~'), 'Desktop')
+        youtube_video_path = os.path.join('youtubeVideo')
+        os.makedirs(youtube_video_path,exist_ok=True)
+        self.download_path = youtube_video_path or os.path.join(os.path.expanduser('~'), 'Desktop', 'video')
         # 确保下载路径存在
         if not os.path.exists(self.download_path):
             print(f"下载路径不存在: {self.download_path}")
@@ -54,46 +56,14 @@ class YouTubeDownloader:
             print(f"加载视频信息出错: {e}")
             sys.exit(1)
 
-    def select_best_format(self, formats):
-        """筛选并选择filesize最大的视频格式"""
-        # 筛选出同时包含 'filesize' 和 'height'，且 'filesize' 不是 None，'acodec' 不是 None 的格式
-        valid_formats = [
-            fmt for fmt in formats
-            if 'filesize' in fmt and fmt['filesize'] is not None
-               and 'height' in fmt
-               and 'audio_channels' in fmt and fmt['audio_channels'] is not None
-        ]
 
-        # 如果没有合适的格式，退出
-        if not valid_formats:
-            print("没有找到合适的视频格式。")
-            sys.exit(1)
 
-        # 根据 'filesize' 排序，选择最大的视频格式
-        best_format = max(valid_formats, key=lambda x: x['filesize'])
-        return best_format
+
 
     def download_video(self):
         """下载视频"""
         # 获取视频信息
         title, formats, subtitles = self.load_video_info()
-
-        # 选择最清晰的视频格式
-        selected_format = self.select_best_format(formats)
-        print(selected_format)
-        print(selected_format["resolution"])
-
-        if 'height' in selected_format and 'filesize' in selected_format:
-            quality_text = f"{selected_format['height']}p - {selected_format['filesize'] / 1024 / 1024:.2f} MB"
-        elif 'filesize' in selected_format:  # 可能是音频
-            quality_text = f"音频 - {selected_format['filesize'] / 1024 / 1024:.2f} MB"
-        else:
-            print("选择的格式不包含有效的质量信息")
-            return
-
-        print(f"正在下载 {quality_text} 格式...")
-
-        # 使用 youtube-dl 进行下载操作，确保选中合适的格式。
         ydl_opts = {
             'format': 'bestvideo+bestaudio/best',  # 下载最佳视频和音频并合并
             'outtmpl': os.path.join(self.download_path, f"{title}.%(ext)s"),  # 输出文件名模板
