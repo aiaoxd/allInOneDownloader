@@ -4,7 +4,7 @@ import re
 import requests
 from urllib.parse import unquote
 from tqdm import tqdm
-
+import time
 
 class DouyinDownloader:
     def __init__(self, share_link, download_folder='doyinVideo'):
@@ -29,6 +29,7 @@ class DouyinDownloader:
         """替换非法字符（例如 Windows 系统中的非法字符）"""
         sanitized_title = re.sub(r'[<>:"/\\|?*]', '_', title)  # 将非法字符替换为 '_'
         sanitized_title = sanitized_title.strip()  # 去除两端的空格
+        sanitized_title = sanitized_title[:50]
         return sanitized_title
 
     def download_video(self, url, title):
@@ -67,10 +68,41 @@ class DouyinDownloader:
 
     def get_modalid_from_share_link(self):
         """从分享链接中提取 modal_id"""
-        pattern = r'https://v\.douyin\.com/[a-zA-Z0-9]+/?'
 
-        # 提取分享链接中的 URL 部分
+        # 匹配分享视频链接
+        video_pattern = r'https://www\.douyin\.com/share/video/(\d+)\?'
+
+        # 匹配带有 modal_id 参数的用户链接
+        user_pattern = r'https://www\.douyin\.com/user/.+?modal_id=(\d+)'
+
+        # 匹配带有 modal_id 参数的 discover 链接
+        discover_pattern = r'https://www\.douyin\.com/discover\?modal_id=(\d+)'
+
+        # 尝试匹配分享视频链接中的 modal_id
+        match = re.search(video_pattern, self.share_link)
+        if match:
+            modal_id = match.group(1)
+            print(f"Extracted modal_id from video link: {modal_id}")
+            return modal_id
+
+        # 尝试匹配用户链接中的 modal_id
+        match = re.search(user_pattern, self.share_link)
+        if match:
+            modal_id = match.group(1)
+            print(f"Extracted modal_id from user link: {modal_id}")
+            return modal_id
+
+        # 尝试匹配 discover 链接中的 modal_id
+        match = re.search(discover_pattern, self.share_link)
+        if match:
+            modal_id = match.group(1)
+            print(f"Extracted modal_id from discover link: {modal_id}")
+            return modal_id
+
+        # 如果没有找到，继续处理分享链接
+        pattern = r'https://v\.douyin\.com/[a-zA-Z0-9]+/?'
         try:
+            # 提取分享链接中的 URL 部分
             url = re.findall(pattern, self.share_link)[0]
         except Exception as e:
             print('Invalid URL')
