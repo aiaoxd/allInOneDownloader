@@ -4,6 +4,8 @@ import re
 import requests
 import ffmpeg
 from tqdm import tqdm
+import subprocess
+import platform
 
 class BilibiliDownloader:
     def __init__(self, url, sessdata="", cookies=None, headers=None):
@@ -33,8 +35,6 @@ class BilibiliDownloader:
         self.video_title = ""
         self.video_url = ""
         self.audio_url = ""
-        self.video_path = "temp/video.mp4"
-        self.audio_path = "temp/audio.mp3"
         self.output_path = ""
 
     def get_sessdata(self):
@@ -56,14 +56,19 @@ class BilibiliDownloader:
                 return sessdata
         else:
             return ""  # 返回空字符串
-
+    def sanitize_filename(self, title):
+        """替换非法字符（例如 Windows 系统中的非法字符）"""
+        sanitized_title = re.sub(r'[<>:"/\\|?*]', '_', title)  # 将非法字符替换为 '_'
+        sanitized_title = sanitized_title.strip()  # 去除两端的空格
+        sanitized_title = sanitized_title[:50]
+        return sanitized_title
     def fetch_video_info(self):
         """从 Bilibili 获取视频信息"""
         try:
             response = requests.get(self.url, cookies=self.cookies, headers=self.headers)
             if response.status_code == 200:
                 # 提取视频标题
-                self.video_title = re.findall('<h1 data-title="(.*?)" title="', response.text)[0]
+                self.video_title = self.sanitize_filename(re.findall('<h1 data-title="(.*?)" title="', response.text)[0])
 
                 # 获取视频和音频的下载链接
                 video_info = json.loads(re.findall('__playinfo__=(.*?)</script>', response.text)[0])
@@ -80,8 +85,9 @@ class BilibiliDownloader:
     def download_file(self, url, filename):
         """下载文件并保存到本地"""
         try:
-            if not os.path.exists("temp"):
-                os.makedirs("temp")
+            os.makedirs('video', exist_ok=True)
+            temp_path = os.path.join("video", f"bilibiliVideo", "temp")
+            os.makedirs(temp_path, exist_ok=True)
 
             # 发起请求获取视频文件
             response = requests.get(url, cookies=self.cookies, headers=self.headers, stream=True)
@@ -103,56 +109,90 @@ class BilibiliDownloader:
         except Exception as e:
             print(f"下载文件时发生错误: {e}")
 
+    def check_ffmpeg_installed(self):
+        """检查 ffmpeg 是否安装"""
+        try:
+            subprocess.run(['ffmpeg', '-version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return True
+        except FileNotFoundError:
+            return False
+
     def combine_video_and_audio(self, video_path, audio_path, output_path):
         """使用 ffmpeg-python 合并视频和音频"""
-        print('合并视频和音频中...  取决于电脑配置')
-        try:
-            # 创建输出文件夹
-            os.makedirs("bilibiliVideo", exist_ok=True)
 
-            # 使用 ffmpeg-python 进行视频和音频合并
-            video_input = ffmpeg.input(video_path)
-            audio_input = ffmpeg.input(audio_path)
+        if self.check_ffmpeg_installed():
+            # 如果 ffmpeg 安装了，使用 ffmpeg 来合并
+            print('检测到ffmpeg已安装')
+            print('合并视频和音频中...  取决于电脑配置')
+            try:
+                command = [
+                    'ffmpeg',
+                    '-i', video_path,  # 输入视频文件
+                    '-i', audio_path,  # 输入音频文件
+                    '-c:v', 'libx264',  # 视频编解码器
+                    '-c:a', 'aac',  # 音频编解码器
+                    '-b:a', '192k',  # 设置音频比特率
+                    '-strict', 'experimental',  # 允许实验性功能
+                    '-preset', 'fast',  # 设置编码速度
+                    '-y',  # 自动覆盖输出文件
+                    output_path  # 输出文件路径
+                ]
 
-            ffmpeg.output(video_input, audio_input, output_path, vcodec='libx264', acodec='aac',
-                          strict='experimental', audio_bitrate='192k', loglevel='error', threads=0, preset='fast') \
-                .run(overwrite_output=True)
+                subprocess.run(command, check=True)
+                print(f"合并完成，输出文件: {output_path}")
 
-            print(f"合并完成，输出文件: {output_path}")
+            except subprocess.CalledProcessError as e:
+                print(f"FFmpeg 错误: {e}")
+            except Exception as e:
+                print(f"发生错误: {e}")
+            return True
+        else:
+            print('未检测到ffmpeg')
+            system_platform = platform.system()
 
-        except ffmpeg.Error as e:
-            print(f"FFmpeg 错误: {e}")
-            print(f"错误输出: {e.stderr.decode()}")
+            if system_platform == 'Windows':
+                print(
+                    '请安装ffmpeg并设置环境变量，具体步骤参考：https://ffmpeg.org/ windows版本 ： https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-2024-12-23-git-6c9218d748-full_build.7z')
+            elif system_platform == 'Darwin':  # macOS的系统平台名称是Darwin
+                print('请安装ffmpeg并设置环境变量，您可以通过Homebrew安装：\nbrew install ffmpeg')
+            else:
+                print('当前平台未明确支持，建议访问FFmpeg官方网站：https://ffmpeg.org/download.html')
+            return False
 
     def download_and_merge(self):
-        """下载视频和音频并合并"""
-        self.fetch_video_info()
+            """下载视频和音频并合并"""
+            self.fetch_video_info()
 
-        if not self.video_url or not self.audio_url:
-            print("视频或音频URL缺失，无法下载或合并")
-            return
+            if not self.video_url or not self.audio_url:
+                print("视频或音频URL缺失，无法下载或合并")
+                return
 
-        # 下载视频和音频
-        video_filename = f"temp/{self.video_title}.mp4"
-        audio_filename = f"temp/{self.video_title}.mp3"
+            # 下载视频和音频
+            os.makedirs('video', exist_ok=True)
+            temp_path = os.path.join("video",f"bilibiliVideo", "temp")
 
-        print(f"开始下载视频: {video_filename}")
-        self.download_file(self.video_url, video_filename)
+            video_filename = os.path.join(temp_path,f"{self.video_title}.mp4")
+            audio_filename = os.path.join(temp_path,f"{self.video_title}.mp3")
 
-        print(f"开始下载音频: {audio_filename}")
-        self.download_file(self.audio_url, audio_filename)
+            print(f"开始下载视频: {video_filename}")
+            self.download_file(self.video_url, video_filename)
 
-        # 合并视频和音频
-        self.output_path = f"bilibiliVideo/{self.video_title}.mp4"
-        self.combine_video_and_audio(video_filename, audio_filename, self.output_path)
+            print(f"开始下载音频: {audio_filename}")
+            self.download_file(self.audio_url, audio_filename)
 
-        # 清空temp
-        if os.path.exists("temp"):
-            for file in os.listdir("temp"):
-                file_path = os.path.join("temp", file)
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
-            os.rmdir("temp")
+            # 合并视频和音频
+            os.makedirs('video', exist_ok=True)
+            self.output_path = os.path.join("video", "bilibiliVideo",f"{self.video_title}.mp4")
+            is_combined = self.combine_video_and_audio(video_filename, audio_filename, self.output_path)
+
+            if is_combined:
+                # 清空temp
+                if os.path.exists(temp_path):
+                    for file in os.listdir(temp_path):
+                        file_path = os.path.join(temp_path, file)
+                        if os.path.isfile(file_path):
+                            os.remove(file_path)
+                    os.rmdir(temp_path)
 
 
 # 调用类的函数来执行下载任务
@@ -161,7 +201,6 @@ def download_bilibili_video(url, sessdata="", cookies=None, headers=None):
 
 
     downloader = BilibiliDownloader(url, sessdata, cookies=cookies, headers=headers)
-    print(111111111111111111)
 
     print(url, sessdata, cookies, headers)
     downloader.download_and_merge()

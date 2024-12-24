@@ -14,7 +14,8 @@ class YouTubeDownloader:
         """
         self.url = url
         # self.download_path = download_path or os.path.join(os.path.expanduser('~'), 'Desktop')
-        youtube_video_path = os.path.join('youtubeVideo')
+        os.makedirs('video', exist_ok=True)
+        youtube_video_path = os.path.join('video','youtubeVideo')
         os.makedirs(youtube_video_path,exist_ok=True)
         self.download_path = youtube_video_path or os.path.join(os.path.expanduser('~'), 'Desktop', 'video')
         # 确保下载路径存在
@@ -65,14 +66,14 @@ class YouTubeDownloader:
         # 获取视频信息
         title, formats, subtitles = self.load_video_info()
         ydl_opts = {
-            'format': 'bestvideo+bestaudio/best',  # 下载最佳视频和音频并合并
+            # 'format': 'bestvideo+bestaudio/best',  # 下载最佳视频和音频并合并
             'outtmpl': os.path.join(self.download_path, f"{title}.%(ext)s"),  # 输出文件名模板
-            'postprocessors': [{  # 使用后处理器将音频和视频合并成 MP4 格式
-                'key': 'FFmpegVideoConvertor',
-                'preferedformat': 'mp4',  # 强制转换为 mp4 格式
-            }],
+            # 'postprocessors': [{  # 使用后处理器将音频和视频合并成 MP4 格式
+            #     'key': 'FFmpegVideoConvertor',
+            #     'preferedformat': 'mp4',  # 强制转换为 mp4 格式
+            # }],
             'progress_hooks': [self.show_progress],  # 显示进度
-            'quiet': False,  # 显示更多信息
+            'quiet': True,  # 显示更多信息
         }
 
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
