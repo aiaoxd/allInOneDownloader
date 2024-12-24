@@ -67,7 +67,7 @@ class DouyinDownloader:
 
         return "https:" + part_url, title
 
-    def get_modalid_from_share_link(self):
+        def get_modalid_from_share_link(self):
         """从分享链接中提取 modal_id"""
 
         # 匹配分享视频链接
@@ -78,6 +78,9 @@ class DouyinDownloader:
 
         # 匹配带有 modal_id 参数的 discover 链接
         discover_pattern = r'https://www\.douyin\.com/discover\?modal_id=(\d+)'
+
+        # 匹配带有 modal_id 参数的搜索链接（新增）
+        search_pattern = r'https://www\.douyin\.com/search/.+?modal_id=(\d+)'
 
         # 尝试匹配分享视频链接中的 modal_id
         match = re.search(video_pattern, self.share_link)
@@ -98,6 +101,13 @@ class DouyinDownloader:
         if match:
             modal_id = match.group(1)
             print(f"Extracted modal_id from discover link: {modal_id}")
+            return modal_id
+
+        # 尝试匹配搜索链接中的 modal_id
+        match = re.search(search_pattern, self.share_link)
+        if match:
+            modal_id = match.group(1)
+            print(f"Extracted modal_id from search link: {modal_id}")
             return modal_id
 
         # 如果没有找到，继续处理分享链接
