@@ -16,6 +16,7 @@ from tkinter import ttk
 from bilibiliD import BilibiliDownloader  # 假设已经修改为类形式
 from douyinD import DouyinDownloader  # 假设有一个类似的抖音下载类
 from youtubeD import YouTubeDownloader  # 假设有一个类似的 YouTube 下载类
+from kuaishouD import KuaishouDownloader  # 假设有一个类似的 YouTube 下载类
 
 # 定义用于识别视频平台的正则表达式
 def identify_platform(url):
@@ -25,6 +26,8 @@ def identify_platform(url):
         return 'bilibili'
     elif re.match(r'https://www\.youtube\.com', f"{url}") :
         return 'youtube'
+    elif "kuaishou.com" in url:
+        return 'kuaishou'
     else:
         return 'unknown'
 
@@ -89,6 +92,12 @@ def download_video_async(platform, url, log_queue, download_path, progress_callb
             youtube_downloader = YouTubeDownloader(url)
             youtube_downloader.download_video()
             print("YouTube 视频下载完成！")
+        elif platform == 'kuaishou':
+            print("正在下载 Kuaishou 视频...")
+            # 使用 KuaishouDownloader 类进行下载
+            kuaishou_downloader = KuaishouDownloader(url)
+            kuaishou_downloader.download_video_with_shareurl()
+            print("Kuaishou 视频下载完成！")
         else:
             print("未知平台，无法下载视频！")
 
@@ -130,7 +139,7 @@ def start_gui():
         platform = identify_platform(video_url)
 
         if platform == 'unknown':
-            messagebox.showerror("错误", "无法识别该视频平台，请提供有效的 Douyin、Bilibili 或 YouTube 视频链接。")
+            messagebox.showerror("错误", "无法识别该视频平台，请提供有效的 Douyin、Bilibili、Kuaishou 或 YouTube 视频链接。")
         else:
             # 创建一个新线程用于下载任务
             download_thread = threading.Thread(target=download_video_async, args=(platform, video_url, log_queue, download_path, update_progress_callback))
@@ -160,7 +169,7 @@ def start_gui():
     download_path = os.path.dirname(os.path.abspath(__file__))  # 获取当前脚本所在的目录
 
     window = tk.Tk()
-    window.title("视频下载器     支持平台：B站 抖音 油管 ")
+    window.title("Aio视频下载器     支持平台：B站 抖音 油管 快手       github.com/aiaoxd")
     window.geometry("600x400")
 
     # 创建一个 Frame 来水平排列输入框和按钮
@@ -194,7 +203,13 @@ def start_gui():
     progress_bar = ttk.Progressbar(window, length=300, orient="horizontal", mode="determinate")
     progress_bar.pack(pady=10)
 
-    # 启动一个线程用于更新日志框
+    # 启动一个线程用于更新日志框pyinstaller --clean --onefile --noconsole --icon=icon.ico \
+    # --add-data "youtubeD.py;." --add-data "bilibiliD.py;." \
+    # --add-data "kuaishouD.py;." --add-data "douyinD.py;." \
+    # .\alo2g.pypyinstaller --clean --onefile --noconsole --icon=icon.ico \
+    # --add-data "youtubeD.py;." --add-data "bilibiliD.py;." \
+    # --add-data "kuaishouD.py;." --add-data "douyinD.py;." \
+    # .\alo2g.py
     def log_updater():
         update_log(log_text_widget, log_queue)
         window.after(100, log_updater)  # 每100毫秒调用一次更新函数
