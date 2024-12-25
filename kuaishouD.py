@@ -52,10 +52,6 @@ class KuaishouDownloader:
         self.url = url
         self.video_folder = video_folder
         self.cookies = {
-            'kpf': 'PC_WEB',
-            'clientid': '3',
-            'did': 'web_84557f1d270a32899fea29e7414753ba',
-            'kpn': 'KUAISHOU_VISION',
         }
         self.headers = {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
