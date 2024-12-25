@@ -1,6 +1,8 @@
 import json
 import os
 import re
+import sys
+
 import requests
 from urllib.parse import unquote
 from tqdm import tqdm
@@ -54,18 +56,81 @@ class DouyinDownloader:
         else:
             print("Failed to retrieve the video.")
 
+    def download_image(self, url,image_path):
+        """下载视频"""
+        response = requests.get(url, headers=self.headers, stream=True)
+        print(f"HTTP Status Code: {response.status_code}")
+
+        if response.status_code == 200:
+            # 获取文件的总大小
+            total_size = int(response.headers.get('Content-Length', 0))
+
+            # 保存视频文件
+            with open(image_path, 'wb') as f:
+                with tqdm(total=total_size, unit='B', unit_scale=True, desc="Downloading") as pbar:
+                    for chunk in response.iter_content(chunk_size=1024):
+                        if chunk:
+                            f.write(chunk)
+                            pbar.update(len(chunk))  # 更新进度条
+            print(f"Video {image_path} downloaded successfully.")
+            time.sleep(0.5)
+
+        else:
+            print("Failed to retrieve the video.")
+
+    # 下载mp3
+    def download_audio(self, url, audio_path):
+        """下载视频"""
+        response = requests.get(url, headers=self.headers, stream=True)
+        print(f"HTTP Status Code: {response.status_code}")
+        if response.status_code == 200:
+            # 获取文件的总大小
+            total_size = int(response.headers.get('Content-Length', 0))
+            # 保存音频文件
+            with open(audio_path, 'wb') as f:
+                with tqdm(total=total_size, unit='B', unit_scale=True, desc="Downloading") as pbar:
+                    for chunk in response.iter_content(chunk_size=1024):
+                        if chunk:
+                            f.write(chunk)
+                            pbar.update(len(chunk))  # 更新进度条
+            print(f"Video {audio_path} downloaded successfully.")
+            time.sleep(0.5)
     def get_video_url(self, url):
         """获取视频播放地址"""
         response = requests.get(url, headers=self.headers)
         content = re.findall('</div><script id="RENDER_DATA" type="application/json">(.*?)</script>', response.text)
         content = unquote(content[0])
         content = json.loads(content)
-        part_url = content["app"]["videoDetail"]["video"]["bitRateList"][0]['playAddr'][0]['src']
-        title = content["app"]["videoDetail"]["desc"]
-        print(f"Title: {title}")
-        print("Video URL: https://" + part_url)
+        video_list = content["app"]["videoDetail"]["video"]["bitRateList"]
 
-        return "https:" + part_url, title
+        # content['app']['videoDetail']['mediaType'] 2 是图文类型
+        media_type = content['app']['videoDetail']['mediaType']
+        if media_type == 2:
+            image_List = content['app']['videoDetail']['images']
+            title = self.sanitize_filename(content["app"]["videoDetail"]["desc"])
+            image_folder = os.path.join(self.download_folder,f"图文_{title}")
+            os.makedirs(image_folder, exist_ok=True)
+
+            # 下载图文
+            for index,image_detail in enumerate(image_List):
+                image_path = os.path.join(image_folder, f"{(title)}_{index+1}.jpg")
+                image_url = image_detail['urlList'][0]
+                self.download_image( image_url,image_path)
+
+            # 下载mp3
+            mp3_url = content['app']['videoDetail']['music']['playUrl']['uri']
+            audio_path = os.path.join(image_folder, f"{(title)}.mp3")
+            self.download_audio(mp3_url,audio_path)
+
+            print('图文已下载完成   请在视频文件夹中查看')
+            sys.exit(2)
+        else:
+            part_url = content["app"]["videoDetail"]["video"]["bitRateList"][0]['playAddr'][0]['src'] # 视频类型
+            title = content["app"]["videoDetail"]["desc"]
+            print(f"Title: {title}")
+            print("Video URL: https://" + part_url)
+
+            return "https:" + part_url, title
 
     def get_modalid_from_share_link(self):
         """从分享链接中提取 modal_id"""
