@@ -1,12 +1,14 @@
 # allInOneDownloader
 
-下载 alo2gforwindows.zip 解压 运行即可
+下载 解压 即可
 
-如果是代码就运行alo2g.py 安装所有依赖 运行也是图形界面
+如果是代码就安装所有依赖 运行python alo2g.py 
+
+如果不会代码 打开windows文件夹 解压 运行exe程序即可
 
 ## 功能
 
-图形界面下载视频 支持B站 抖音 youtube
+图形界面下载视频 支持B站 抖音 youtube 快手
 
 ## 激活虚拟环境(可选)
 在项目根目录下运行以下命令,例如
@@ -52,6 +54,6 @@ deactivate
 
 ## 视频教程
 ```bash
-
+https://www.bilibili.com/video/BV1kJkoYyEnh/
 ```
 
