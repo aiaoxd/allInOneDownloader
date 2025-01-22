@@ -255,13 +255,11 @@ class DouyinDownloader:
 # 示例调用方法
 if __name__ == '__main__':
     # 通过命令行传入分享链接
-    # import argparse
+    import argparse
 
-    # parser = argparse.ArgumentParser(description="Douyin Video Downloader")
-    # parser.add_argument('share_link', type=str, help='Douyin video share link')
-    # args = parser.parse_args()
+    parser = argparse.ArgumentParser(description="Douyin Video Downloader")
+    parser.add_argument('share_link', type=str, help='Douyin video share link')
+    args = parser.parse_args()
 
-    share_link = '6.99 DHV:/ h@O.xS 10/24 看看你们的封神壁纸# 屏保该换了系列 # 超清 # 好看的背景图 # 高级感 # 手机锁屏 https://v.douyin.com/ifkokBpg/ 复制此链接，打开Dou音搜索，直接观看视频！'
-
-    downloader = DouyinDownloader(f'''{share_link}''')
+    downloader = DouyinDownloader(f'''{args.share_link}''')
     downloader.start_download()
