@@ -134,7 +134,6 @@ class DouyinDownloader:
 
     def get_modalid_from_share_link(self):
         """从分享链接中提取 modal_id"""
-
         # 匹配分享视频链接 (例如 https://www.douyin.com/video/{modal_id})
         video_pattern = r'https://www\.douyin\.com/video/(\d+)'
 
@@ -197,20 +196,29 @@ class DouyinDownloader:
                 # 检查是否成功获取最终重定向 URL
                 if response.url:
                     print(f"Final Redirect URL: {response.url}")
-                    print(response.url)
-                    # 提取 video modal_id
-                    pattern = r'https://www\.douyin\.com/video/(\d+)'
-                    match = re.search(pattern, response.url)
 
-                    if match:
-                        modal_id = match.group(1)
-                        print(f"Extracted modal_id: {modal_id}")
+                    # 匹配 video modal_id
+                    pattern_video = r'https://www\.douyin\.com/video/(\d+)'
+                    match_video = re.search(pattern_video, response.url)
+
+                    if match_video:
+                        modal_id = match_video.group(1)
+                        print(f"Extracted modal_id from video: {modal_id}")
                         return modal_id
-                    else:
-                        print("No modal_id found in final URL.")
-                        retries += 1
-                        time.sleep(2)  # 等待 2 秒再尝试
-                        print(f"Retrying... ({retries}/{max_retries})")
+
+                    # 匹配 note modal_id
+                    pattern_note = r'https://www\.douyin\.com/note/(\d+)'
+                    match_note = re.search(pattern_note, response.url)
+
+                    if match_note:
+                        modal_id = match_note.group(1)
+                        print(f"Extracted modal_id from note: {modal_id}")
+                        return modal_id
+
+                    print("No modal_id found in final URL.")
+                    retries += 1
+                    time.sleep(2)  # 等待 2 秒再尝试
+                    print(f"Retrying... ({retries}/{max_retries})")
                 else:
                     print("Invalid response URL. Retrying...")
                     retries += 1
@@ -247,11 +255,13 @@ class DouyinDownloader:
 # 示例调用方法
 if __name__ == '__main__':
     # 通过命令行传入分享链接
-    import argparse
+    # import argparse
 
-    parser = argparse.ArgumentParser(description="Douyin Video Downloader")
-    parser.add_argument('share_link', type=str, help='Douyin video share link')
-    args = parser.parse_args()
+    # parser = argparse.ArgumentParser(description="Douyin Video Downloader")
+    # parser.add_argument('share_link', type=str, help='Douyin video share link')
+    # args = parser.parse_args()
 
-    downloader = DouyinDownloader(f'''{args.share_link}''')
+    share_link = '6.99 DHV:/ h@O.xS 10/24 看看你们的封神壁纸# 屏保该换了系列 # 超清 # 好看的背景图 # 高级感 # 手机锁屏 https://v.douyin.com/ifkokBpg/ 复制此链接，打开Dou音搜索，直接观看视频！'
+
+    downloader = DouyinDownloader(f'''{share_link}''')
     downloader.start_download()
